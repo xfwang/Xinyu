@@ -20,8 +20,3 @@ model {
   for (k in 1:K)
     target += - lambda * fabs(beta[k]); 
 }
-
-generated quantities {
-  real<lower=0> sigma_squared;
-  sigma_squared = squared_error / N;
-}
