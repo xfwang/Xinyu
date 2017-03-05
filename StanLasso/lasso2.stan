@@ -1,4 +1,4 @@
-## non-informative prior 
+## Laplace prior, lambda as a constant
 
 data {
   int<lower=0> N;
@@ -10,6 +10,8 @@ data {
 
 parameters {
   vector[K] beta;
+  real mu;
+  real<lower=0> sigma;
 }
 
 transformed parameters {
@@ -18,6 +20,7 @@ transformed parameters {
 }
 
 model {
+  beta ~ double_exponential(mu, sigma);
   target += -squared_error;
   for (k in 1:K)
     target += - lambda * fabs(beta[k]); 
