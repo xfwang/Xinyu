@@ -7,7 +7,7 @@ library(grplasso)
 
 ##  parameters
 N = 100 # number of samples
-K = 100 # number of parameters
+K = 100 # number of covariates
 K1= 10
 lambda0 = 0.1
 

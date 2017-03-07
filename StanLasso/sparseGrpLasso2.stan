@@ -1,4 +1,4 @@
-## group lasso, without any prior
+## Sparse group lasso, Laplace prior
 
 data {
     int<lower=0> N;
@@ -8,11 +8,11 @@ data {
     real<lower=0> lambda;
     }
     
-    parameters {
+parameters {
     vector[K] beta;
     }
     
-    transformed parameters {
+transformed parameters {
     real<lower=0> squared_error;
     real S1;
     real S2;
@@ -31,9 +31,11 @@ data {
     }
 
 model {
-  // beta ~ double_exponential(0,1);
-  target += -squared_error;
-  target += - lambda * (S1+S2+S3); 
+    beta ~ double_exponential(0,1);
+    target += -squared_error;
+    target += - lambda * (S1+S2+S3); 
+    for (k in 1:K)
+      target += - lambda * fabs(beta[k]); 
 }
 
 generated quantities {

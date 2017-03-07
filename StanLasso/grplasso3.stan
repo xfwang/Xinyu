@@ -1,14 +1,14 @@
-## group lasso, without any prior
+## group lasso, Laplace prior, lambda as a PARAMETER
 
 data {
     int<lower=0> N;
     int<lower=1> K;
     vector[N] y;
     matrix[N,K] x;
-    real<lower=0> lambda;
     }
     
     parameters {
+    real<lower=0> lambda;
     vector[K] beta;
     }
     
@@ -31,7 +31,7 @@ data {
     }
 
 model {
-  // beta ~ double_exponential(0,1);
+  beta ~ double_exponential(0,1);
   target += -squared_error;
   target += - lambda * (S1+S2+S3); 
 }

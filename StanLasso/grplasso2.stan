@@ -1,4 +1,4 @@
-## group lasso, without any prior
+## group lasso, Laplace prior
 
 data {
     int<lower=0> N;
@@ -31,7 +31,7 @@ data {
     }
 
 model {
-  // beta ~ double_exponential(0,1);
+  beta ~ double_exponential(0,1);
   target += -squared_error;
   target += - lambda * (S1+S2+S3); 
 }
