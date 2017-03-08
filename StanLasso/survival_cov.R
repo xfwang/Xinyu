@@ -1,45 +1,52 @@
+rm(list=ls())
 library(dplyr)
 library(survival)
 library(ggplot2)
 library(Rcpp)
+library(rstan)
+source("test4_survival/functions.R")
 
-sim_data <- function(alpha, mu, Nobs, Ncen) {
-  observed_data <- data.frame(os_status = rep_len('DECEASED', Nobs),
-                              os_months = rweibull(n = Nobs, alpha, exp(-(mu)/alpha)),
-                              stringsAsFactors = F
-  )
-  
-  censored_data <- data.frame(os_status = rep_len('LIVING', Ncen),
-                              os_months = runif(Ncen) * rweibull(Ncen, alpha, exp(-(mu)/alpha)),
-                              stringsAsFactors = F
-  )
-  
-  return(observed_data %>% bind_rows(censored_data))
-}
-
-test_alpha <- 0.8
-test_mu <- -3
-
+alpha <- 100
 ## sample sizes from TCGA blca data
-test_nobs <- 179 
-test_ncen <- 230
+nobs <- 200 
+ncen <- 2
+
+K = 100 # number of covariates
+K1= 10
+
+beta = c(rep(1,K1), rep(0,(K-K1)))
+x = matrix(rnorm(1:((nobs + ncen)*K), sd = 0.1), nrow=(nobs + ncen))
+mu = x %*% beta
+idx.event <- c(rep(TRUE, nobs), rep(FALSE, ncen))
 
 ## test these inputs for arbitrary values of alpha & mu
-simulated_data <- sim_data(alpha = test_alpha,
-                           mu = test_mu,
-                           Nobs = test_nobs,
-                           Ncen = test_ncen) 
+simulated_data <- sim_ph(alpha = alpha,
+                         mu = mu,
+                         idx.event = idx.event) 
 
-
-observed_data <- simulated_data %>%
-  dplyr::filter(os_status == 'DECEASED')
-censored_data <- simulated_data %>%
-  dplyr::filter(os_status != 'DECEASED')
 stan_data <- list(
-  Nobs = nrow(observed_data),
-  Ncen = nrow(censored_data),
-  yobs = observed_data$os_months,
-  ycen = censored_data$os_months
+  Nobs = nobs,
+  Ncen = ncen,
+  yobs = simulated_data[idx.event, "os_months"],
+  ycen = simulated_data[!idx.event, "os_months"],
+  K = K,
+  xobs = x[idx.event, ],
+  xcen = x[!idx.event, ]
 )
-rm(censored_data)
-rm(observed_data)
+
+stan_file <- "test4_survival/coxph.stan"
+## MODEL1 random initial values
+recover_simulated <- stan(stan_file,
+                          data = stan_data,
+                          chains = 1,
+                          pars = c("beta","alpha","lambda"), 
+                          iter = 1000,
+                          seed = 1328025050
+)
+xx=summary(recover_simulated)$summary
+head(xx)
+crossprod(summary(recover_simulated)$summary[1:100,1]-beta)
+
+
+
+
