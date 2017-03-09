@@ -5,6 +5,9 @@ library(ggplot2)
 library(Rcpp)
 source("test4_survival/functions.R")
 
+#####  -----    COMMENTS   ------  #####
+## mu = -3 => large variance => small effect size in estimation
+## mu = -1 => small variance => relatively easy to estimate alpha
 test_alpha <- 0.8
 test_mu <- -3
 
@@ -41,28 +44,49 @@ rm(observed_data)
 str(stan_data)
 
 
-stan_file <- "test4_survival/weibull.stan"
 ## MODEL1 random initial values
+# strong prior on alpha
+stan_file <- "test4_survival/weibull.stan"
 recover_simulated <- 
   rstan::stan(stan_file,
               data = stan_data,
-              chains = 4,
+              chains = 1,
               iter = 1000,
               seed = 1328025050
   )
 print(recover_simulated)
 
-
-## MODEL2 set initial values
-
+# weak prior on alpha
+stan_file2 <- "test4_survival/weibull2.stan"
 recover_simulated2 <- 
-  rstan::stan(stan_file,
+  rstan::stan(stan_file2,
               data = stan_data,
-              chains = 4,
+              chains = 1,
               iter = 1000,
-              init = gen_inits
+              seed = 1328025050
   )
 print(recover_simulated2)
+
+# strong prior on both alpha and mu
+stan_file3 <- "test4_survival/weibull3.stan"
+recover_simulated3 <- 
+  rstan::stan(stan_file3,
+              data = stan_data,
+              chains = 1,
+              iter = 1000,
+              seed = 1328025050
+  )
+print(recover_simulated3)
+
+## MODEL2 set initial values
+# recover_simulated2 <- 
+#   rstan::stan(stan_file,
+#               data = stan_data,
+#               chains = 4,
+#               iter = 1000,
+#               init = gen_inits
+#   )
+# print(recover_simulated2)
 
 ## CONVERGENCE
 rstan::traceplot(recover_simulated2, 'lp__')

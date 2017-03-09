@@ -13,10 +13,8 @@ data {
  
 transformed data { 
   real<lower=0> tau_mu; 
-  real<lower=0> tau_al; 
- 
-  tau_mu = 10.0; 
-  tau_al = 10.0; 
+
+  tau_mu = 1.0; 
 } 
  
 parameters { 

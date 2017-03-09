@@ -20,14 +20,19 @@ transformed data {
 } 
  
 parameters { 
-  real alpha; 
+  real alpha_raw; 
   real mu; 
+} 
+ 
+transformed parameters { 
+  real alpha; 
+  alpha = exp(tau_al * alpha_raw);  // weak prior
 } 
  
 model { 
   yobs ~ weibull(alpha, exp(-(mu)/alpha)); 
   target += weibull_lccdf(ycen | alpha, exp(-(mu)/alpha)); 
  
-  alpha ~ normal(0.0, 1.0); // strong prior
+  alpha_raw ~ normal(0.0, 1.0); 
   mu ~ normal(0.0, tau_mu); 
 } 
