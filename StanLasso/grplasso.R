@@ -2,23 +2,28 @@ rm(list=ls())
 library(rstan)
 library(glmnet)
 library(grplasso)
+library(SGL)
+library(magrittr)
+source("./functions/result_process.R")
 
 ## Simulation - Group LASSO 
 
 ##  parameters
 N = 100 # number of samples
-K = 100 # number of parameters
-K1= 10
+G = 10 # number of grouops
+G1 = 3 # number of active grouops
+K = 10 # number of covariates in each group
 lambda0 = 0.1
+
 # group indicator of length K: 1, 2, 3... represent group No.; 0 represents inactive group
-ind <- c(rep(1,K1), rep(2,K1), rep(0,(K-K1*2)))
-n.levels <- length(unique(ind))
+ind <- rep(1:K, each = G)
 
-beta <- rep(0, K); beta[ind == 1] <- 1; beta[ind == 2] <- -2;
-ind.sparse <- c(4:6, 11:13); beta[ind.sparse] <- 0
+beta1 <- c(1:5, rep(0,5))
+beta <- rep(beta1, G1) %>% 
+  c(rep(0, (G-G1)*K))
 
-x = matrix(rnorm(1:(N*K)), nrow=N)
-y = as.vector(x %*% beta + rnorm(N, sd = 1))
+x = matrix(rnorm(1:(N*K*G)), nrow=N)
+y = as.vector(x %*% beta + rnorm(N, sd = 2))
 
 # write model
 # cat("
@@ -72,32 +77,43 @@ y = as.vector(x %*% beta + rnorm(N, sd = 1))
 ## group lasso, without any prior
 fit <- stan(file = "test3_LASSO/grplasso.stan", data = list(N,K, y,x,lambda=lambda0), pars=c("beta"), chains = 1)
 crossprod(summary(fit)$summary[1:100,1]-beta)
+crossprod(param.stan(fit)-beta)
 
 ## group lasso, Laplace prior
 fit2 <- stan(file = "test3_LASSO/grplasso2.stan", data = list(N,K, y,x,lambda=lambda0), pars=c("beta"), chains = 1)
 crossprod(summary(fit2)$summary[1:100,1]-beta)
+crossprod(param.stan(fit2)-beta)
 
 ## group lasso, Laplace prior, lambda as a PARAMETER
 fit3 <- stan(file = "test3_LASSO/grplasso3.stan", data = list(N,K, y,x), pars=c("beta","lambda"), chains = 1)
 crossprod(summary(fit3)$summary[1:100,1]-beta)
+crossprod(param.stan(fit3)-beta)
 
 ## Sparse group lasso, without any prior
 fit.sparse1 <- stan(file = "test3_LASSO/sparseGrpLasso.stan", data = list(N,K, y,x,lambda=lambda0), pars=c("beta"), chains = 1)
 crossprod(summary(fit.sparse1)$summary[1:100,1]-beta)
+crossprod(param.stan(fit.sparse1)-beta)
 
 ## Sparse group lasso, Laplace prior
 fit.sparse2 <- stan(file = "test3_LASSO/sparseGrpLasso2.stan", data = list(N,K, y,x,lambda=lambda0), pars=c("beta"), chains = 1)
 crossprod(summary(fit.sparse2)$summary[1:100,1]-beta)
+crossprod(param.stan(fit.sparse2)-beta)
 
 ## Sparse group lasso, Laplace prior, lambda as a PARAMETER
-fit.sparse3 <- stan(file = "test3_LASSO/sparseGrpLasso3.stan", data = list(N,K, y,x,lambda=lambda0), pars=c("beta"), chains = 1)
-crossprod(summary(fit.sparse3)$summary[1:100,1]-beta)
+fit.sparse3 <- stan(file = "test3_LASSO/sparseGrpLasso3.stan", data = list(N,K, y,x,lambda=lambda0), pars=c("beta","lambda"), chains = 1)
+crossprod(param.stan(fit.sparse3)-beta)
 
 
-fit.glasso = grplasso(x=cbind(1,x), y, index = c(NA,ind), lambda=3, model = LinReg())
-crossprod(fit.glasso$coefficients-beta)
+## PACKAGE: grplasso
+fit.glasso = grplasso(x=cbind(1,x), y, index = c(NA,ind), lambda=100, model = LinReg())
+crossprod(fit.glasso$coefficients[-1]-beta)
 
-
-
-
+## PACKAGE: SGL
+cv.sgl <- list(x = x, y = matrix(y, ncol=1)) %>% 
+  cvSGL(ind, type = "linear")
+# largest value of lambda such that error is within 1 standard error of the minimum
+lambda.1se <- cv.sgl$lambdas[which(cv.sgl$lldiff == max(cv.sgl$lldiff[cv.sgl$lldiff < (cv.sgl$llSD[which.min(cv.sgl$lldiff)] + min(cv.sgl$lldiff))]))]
+fit.sgl <- list(x = x, y = matrix(y, ncol=1)) %>% 
+  SGL(ind, type = "linear", lambda = lambda.1se)
+crossprod(fit.sgl$beta-beta)
 

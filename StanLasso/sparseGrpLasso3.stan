@@ -1,39 +1,31 @@
 ## Sparse group lasso, Laplace prior, lambda as a PARAMETER
 
 data {
-    int<lower=0> N;
-    int<lower=1> K;
+    int<lower=0> N; // number of samples
+    int<lower=1> K; // number of covariates in each group 
+    int<lower=1> G; // number of groups
     vector[N] y;
-    matrix[N,K] x;
+    matrix[N,K*G] x;
     }
     
-    parameters {
-    vector[K] beta;
+parameters {
     real<lower=0> lambda;
+    vector[K*G] beta;
     }
     
-    transformed parameters {
+transformed parameters {
     real<lower=0> squared_error;
-    real S1;
-    real S2;
-    real S3;
-    vector[10] beta1;
-    vector[10] beta2;
-    vector[80] beta3;
+    vector[G] SS;
 
     squared_error = dot_self(y - x * beta);
-    for(i in 1:10) beta1[i] = beta[i];
-    for(i in 11:20) beta2[i-10] = beta[i];
-    for(i in 21:100) beta3[i-20] = beta[i];
-    S1 = dot_self(beta1);
-    S2 = dot_self(beta2);
-    S3 = dot_self(beta3);
+    for(i in 1:G) 
+      SS[i] = dot_self(beta[((i-1)*K+1) : (i*K)]);
     }
 
 model {
     beta ~ double_exponential(0,1);
     target += -squared_error;
-    target += - lambda * (S1+S2+S3); 
+    target += - lambda * sum(SS); 
     for (k in 1:K)
       target += - lambda * fabs(beta[k]); 
 }
