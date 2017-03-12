@@ -10,6 +10,7 @@ data {
     }
     
 parameters {
+    real<lower=0, upper=1> p;
     vector[K*G] beta;
     }
     
@@ -25,9 +26,9 @@ transformed parameters {
 model {
     // beta ~ double_exponential(0,1);
     target += -squared_error;
-    target += - lambda * sum(SS); 
+    target += - p * lambda * sqrt(K) * sum(SS); 
     for (k in 1:K)
-      target += - lambda * fabs(beta[k]); 
+      target += - (1-p) * lambda * fabs(beta[k]); 
 }
 
 generated quantities {

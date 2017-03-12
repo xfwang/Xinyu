@@ -9,6 +9,7 @@ data {
     }
     
 parameters {
+    real<lower=0, upper=1> p;
     real<lower=0> lambda;
     vector[K*G] beta;
     }
@@ -25,12 +26,12 @@ transformed parameters {
 model {
     beta ~ double_exponential(0,1);
     target += -squared_error;
-    target += - lambda * sum(SS); 
+    target += - p * lambda * sqrt(K) * sum(SS); 
     for (k in 1:K)
-      target += - lambda * fabs(beta[k]); 
-}
+      target += - (1-p) * lambda * fabs(beta[k]); 
+    }
 
 generated quantities {
-  real<lower=0> sigma_squared;
-  sigma_squared = squared_error / N;
-}
+    real<lower=0> sigma_squared;
+    sigma_squared = squared_error / N;
+    }

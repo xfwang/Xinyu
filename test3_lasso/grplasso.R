@@ -18,91 +18,38 @@ lambda0 = 0.1
 # group indicator of length K: 1, 2, 3... represent group No.; 0 represents inactive group
 ind <- rep(1:K, each = G)
 
-beta1 <- c(1:5, rep(0,5))
+beta1 <- c(-2:2, rep(0,5))
 beta <- rep(beta1, G1) %>% 
   c(rep(0, (G-G1)*K))
 
 x = matrix(rnorm(1:(N*K*G)), nrow=N)
 y = as.vector(x %*% beta + rnorm(N, sd = 2))
 
-# write model
-# cat("
-# data {
-#     int<lower=0> N;
-#     int<lower=1> K;
-#     vector[N] y;
-#     matrix[N,K] x;
-#     vector[K] ind; // group indicator
-#     real<lower=0> lambda;
-#     }
-#     
-#     parameters {
-#     vector[K] beta;
-#     vector[", sum(ind==1), "] ind1;
-#     vector[", sum(ind==2), "] ind2;
-#     vector[", sum(ind==0), "] ind3;
-# 
-#     ind1 = ", paste("{",paste(which(ind==1),collapse=","),"};"),"
-#     ind2 = ", paste("{",paste(which(ind==2),collapse=","),"};"),"
-#     ind3 = ", paste("{",paste(which(ind==0),collapse=","),"};"),"
-#     }
-#     
-#     transformed parameters {
-#     real<lower=0> squared_error;
-#     real<lower=0> S1;
-#     real<lower=0> S2;
-#     real<lower=0> S3;
-#     
-#     squared_error = dot_self(y - x * beta);
-#     S1 = dot_self(beta[ind1]);
-#     S2 = dot_self(beta[ind2]);
-#     S3 = dot_self(beta[ind3]);",
-#     "
-#     }
-# 
-# model {
-#   // beta ~ double_exponential(mu, sigma);
-#   target += -squared_error;
-#   target += - lambda * (S1+S2+S3); 
-# }
-# 
-# generated quantities {
-#   real<lower=0> sigma_squared;
-#   sigma_squared = squared_error / N;
-# }
-# ",
-# file = "test3_LASSO/grplasso.stan");
 
-
+res <- list()
 ## group lasso, without any prior
-fit <- stan(file = "test3_LASSO/grplasso.stan", data = list(N,K, y,x,lambda=lambda0), pars=c("beta"), chains = 1)
-crossprod(summary(fit)$summary[1:100,1]-beta)
-crossprod(param.stan(fit)-beta)
-
+res$fit <- stan(file = "test3_LASSO/grplasso.stan", data = list(N,K, y,x,lambda=lambda0), pars=c("beta"), chains = 1)
 ## group lasso, Laplace prior
-fit2 <- stan(file = "test3_LASSO/grplasso2.stan", data = list(N,K, y,x,lambda=lambda0), pars=c("beta"), chains = 1)
-crossprod(summary(fit2)$summary[1:100,1]-beta)
-crossprod(param.stan(fit2)-beta)
-
+res$fit2 <- stan(file = "test3_LASSO/grplasso2.stan", data = list(N,K, y,x,lambda=lambda0), pars=c("beta"), chains = 1)
 ## group lasso, Laplace prior, lambda as a PARAMETER
-fit3 <- stan(file = "test3_LASSO/grplasso3.stan", data = list(N,K, y,x), pars=c("beta","lambda"), chains = 1)
-crossprod(summary(fit3)$summary[1:100,1]-beta)
-crossprod(param.stan(fit3)-beta)
+res$fit3 <- stan(file = "test3_LASSO/grplasso3.stan", data = list(N,K, y,x), pars=c("beta","lambda"), chains = 1)
+## group lasso, Laplace prior, lambda as a PARAMETER, with hyperparameters
+res$fit4 <- stan(file = "test3_LASSO/grplasso4.stan", data = list(N,K, y,x), pars=c("beta","lambda", "mu"), chains = 1)
 
 ## Sparse group lasso, without any prior
-fit.sparse1 <- stan(file = "test3_LASSO/sparseGrpLasso.stan", data = list(N,K, y,x,lambda=lambda0), pars=c("beta"), chains = 1)
-crossprod(summary(fit.sparse1)$summary[1:100,1]-beta)
-crossprod(param.stan(fit.sparse1)-beta)
-
+res$fit.sparse1 <- stan(file = "test3_LASSO/sparseGrpLasso.stan", data = list(N,K, y,x,lambda=lambda0), pars=c("beta"), chains = 1)
 ## Sparse group lasso, Laplace prior
-fit.sparse2 <- stan(file = "test3_LASSO/sparseGrpLasso2.stan", data = list(N,K, y,x,lambda=lambda0), pars=c("beta"), chains = 1)
-crossprod(summary(fit.sparse2)$summary[1:100,1]-beta)
-crossprod(param.stan(fit.sparse2)-beta)
-
+res$fit.sparse2 <- stan(file = "test3_LASSO/sparseGrpLasso2.stan", data = list(N,K, y,x,lambda=lambda0), pars=c("beta"), chains = 1)
 ## Sparse group lasso, Laplace prior, lambda as a PARAMETER
-fit.sparse3 <- stan(file = "test3_LASSO/sparseGrpLasso3.stan", data = list(N,K, y,x,lambda=lambda0), pars=c("beta","lambda"), chains = 1)
-crossprod(param.stan(fit.sparse3)-beta)
+res$fit.sparse3 <- stan(file = "test3_LASSO/sparseGrpLasso3.stan", data = list(N,K, y,x,lambda=lambda0), pars=c("beta","lambda"), chains = 1)
+## Sparse group lasso, Laplace prior, lambda as a PARAMETER
+res$fit.sparse4 <- stan(file = "test3_LASSO/sparseGrpLasso4.stan", data = list(N,K, y,x,lambda=lambda0), pars=c("beta","lambda"), chains = 1)
 
+
+## PARAMETER ESTIMATION 
+lapply(res, function(fit) crossprod(param.stan(fit, confidence.level = 0.99)-beta))
+lapply(res, function(fit) crossprod(summary(fit)$summary[1:100,1]-beta))
+lapply(res, function(fit) table((param.stan(fit, confidence.level = 0.99)==0), (beta==0)))
 
 ## PACKAGE: grplasso
 fit.glasso = grplasso(x=cbind(1,x), y, index = c(NA,ind), lambda=100, model = LinReg())
