@@ -4,7 +4,7 @@ library(survival)
 library(ggplot2)
 library(Rcpp)
 library(rstan)
-source("test4_survival/functions.R")
+source("test4_survival/fnt_simulation.R")
 
 alpha <- 100
 ## sample sizes from TCGA blca data
@@ -46,7 +46,7 @@ recover_simulated <- stan(stan_file,
 xx=summary(recover_simulated)$summary
 head(xx)
 crossprod(summary(recover_simulated)$summary[1:100,1]-beta)
-
-
+hist(xx[, "Rhat"])
+plot(summary(recover_simulated)$summary[1:100,1])
 
 
