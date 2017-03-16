@@ -23,7 +23,7 @@ fit <- stan(file = "test3_LASSO/lasso.stan", data = list(N,K, y,x, lambda=lambda
 crossprod(summary(fit)$summary[1:100,1]-beta)
 
 ## Laplace prior, lambda as a CONSTANT
-fit2 <- stan(file = "test3_LASSO/lasso2.stan", data = list(N,K, y,x, lambda=lambda0), pars=c("beta","mu", "sigma"), chains = 1)
+fit2 <- stan(file = "test3_LASSO/lasso2.stan", data = list(N,K, y,x, lambda=lambda0), pars=c("beta","mu", "sigma"), chains = 4)
 crossprod(summary(fit2)$summary[1:100,1]-beta)
 
 ## Laplace prior, lambda as a PARAMETER
@@ -55,6 +55,17 @@ fit.ridge3 <- stan(file = "test3_LASSO/ridge3.stan", data = list(N,K, y,x), pars
 crossprod(summary(fit.ridge3)$summary[1:100,1]-beta)
 
 
+######## --------      Diagnostic analysis in stan (PLOTS)     -------- #########
+## general
+stan_rhat(fit2) # rhat
+stan_ess(fit2)  # effective sample size / total sample size
+stan_mcse(fit2) # Monte Carlo standard error / posterior standard deviation
+stan_diag(fit2, info = 'sample')  # lp__ vs accept_stat
+stan_par(fit2, "beta[1]")  # par vs lp__ 
+stan_plot(fit2)
+stan_plot(fit2, pars = c("beta[2]", "beta[55]"))
+
+log_prob(fit2)
 
 ## GLM
 fit2=glmnet(x,y,lambda = lambda0)
