@@ -4,7 +4,7 @@ library(glmnet)
 library(grplasso)
 library(SGL)
 library(magrittr)
-source("./functions/result_process.R")
+sapply(paste("./functions", dir(paste0("./functions")),sep="\\"),source)
 
 ## Simulation - Group LASSO 
 
@@ -22,7 +22,8 @@ beta1 <- c(-2:2, rep(0,5))
 beta <- rep(beta1, G1) %>% 
   c(rep(0, (G-G1)*K))
 
-x = matrix(rnorm(1:(N*K*G)), nrow=N)
+# x = matrix(rnorm(1:(N*K*G)), nrow=N)
+x = cov_groupLasso(N, K*G)
 y = as.vector(x %*% beta + rnorm(N, sd = 2))
 
 
@@ -48,6 +49,7 @@ res$fit.sparse4 <- stan(file = "test3_LASSO/sparseGrpLasso4.stan", data = list(N
 
 ## PARAMETER ESTIMATION 
 lapply(res, function(fit) crossprod(param.stan(fit, confidence.level = 0.99)-beta))
+lapply(res, function(fit) print(which(param.stan(fit, confidence.level = 0.99) != 0)))
 lapply(res, function(fit) crossprod(summary(fit)$summary[1:100,1]-beta))
 lapply(res, function(fit) table((param.stan(fit, confidence.level = 0.99)==0), (beta==0)))
 
