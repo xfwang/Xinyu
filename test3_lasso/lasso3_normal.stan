@@ -1,4 +1,4 @@
-## Laplace prior, lambda as a parameter
+## Gasussian prior, lambda as a parameter
 
 data {
   int<lower=0> N;
@@ -20,7 +20,7 @@ transformed parameters {
 }
 
 model {
-  beta ~ double_exponential(mu, sigma);
+  beta ~ normal(mu, sigma);
   target += -squared_error;
   for (k in 1:K)
     target += - lambda * N * fabs(beta[k]); 
