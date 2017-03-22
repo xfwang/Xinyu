@@ -11,8 +11,8 @@ data {
 parameters {
     real<lower=0> lambda;
     vector[K*G] beta;
-    vector[K*G] mu;
-    // real<lower=0> sigma;
+    real mu;
+    real<lower=0> sigma;
     }
     
 transformed parameters {
@@ -26,10 +26,8 @@ transformed parameters {
 
 model {
     for(j in 1:(K*G)) 
-      beta[j] ~ double_exponential(mu[j], 1);
+      beta[j] ~ double_exponential(mu, sigma);
     target += -squared_error;
-    target += - lambda * sum(SS); 
-    mu ~ normal(0, 1);
-
+    target += - lambda * sum(sqrt(SS)); 
 }
 

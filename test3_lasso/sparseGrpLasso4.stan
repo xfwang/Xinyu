@@ -28,13 +28,9 @@ model {
     for(j in 1:(K*G)) 
       beta[j] ~ double_exponential(mu[j], 1);
     target += -squared_error;
-    target += - p * lambda * sqrt(K) * sum(SS); 
+    target += - p * lambda * sqrt(K) * sum(sqrt(SS)); 
     for (k in 1:K)
       target += - (1-p) * lambda * fabs(beta[k]); 
     mu ~ normal(0, 1);
     }
 
-generated quantities {
-    real<lower=0> sigma_squared;
-    sigma_squared = squared_error / N;
-    }

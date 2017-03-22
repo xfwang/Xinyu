@@ -25,10 +25,6 @@ transformed parameters {
 model {
   beta ~ double_exponential(0,1);
   target += -squared_error;
-  target += - lambda * sum(SS); 
+  target += - lambda * sum(sqrt(SS)); 
 }
 
-generated quantities {
-  real<lower=0> sigma_squared;
-  sigma_squared = squared_error / N;
-}

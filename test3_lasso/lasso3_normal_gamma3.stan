@@ -31,10 +31,11 @@ model {
   for (j in 1:K)
     beta[j] ~ normal(mu, sigma*tau[j]);
   tau_sq ~ exponential(lambda_sq * N^2 / 8);
-  // lambda_sq ~ gamma(a,b);
+  lambda_sq ~ gamma(2,50);
   // a ~ gamma(1,1);
   target += -squared_error;
   for (k in 1:K)
     target += - lambda * N * fabs(beta[k]); 
   target += sum(log(tau));
+  target += log(lambda);
 }

@@ -26,7 +26,7 @@ transformed parameters {
 model {
     beta ~ double_exponential(0,1);
     target += -squared_error;
-    target += - p * lambda * sqrt(K) * sum(SS); 
+    target += - p * lambda * sqrt(K) * sum(sqrt(SS)); 
     for (k in 1:K)
       target += - (1-p) * lambda * fabs(beta[k]); 
 }
