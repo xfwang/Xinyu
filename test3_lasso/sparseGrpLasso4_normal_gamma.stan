@@ -19,19 +19,24 @@ parameters {
 transformed parameters {
     real<lower=0> squared_error;
     vector[G] SS;
+    real<lower=0> sigma_sq[G];
 
     squared_error = dot_self(y - x * beta);
-    for(i in 1:G) 
+    for(i in 1:G) {
       SS[i] = dot_self(beta[((i-1)*K+1) : (i*K)]);
+      sigma_sq[i] = sigma[i];
+    }
     }
 
 model {
     for(i in 1:G) 
       beta[((i-1)*K+1) : (i*K)] ~ normal(mu[i], sigma[i]);
-    target += -squared_error;
-    target += - p * lambda * sqrt(K) * sum(sqrt(SS)); 
-    for (k in 1:K)
-      target += - (1-p) * lambda * fabs(beta[k]); 
     mu ~ normal(0, 1);
+    sigma_sq ~ exponential(lambda^2 * N^2);
+    target += -squared_error;
+    target += - p * lambda * N * sqrt(K) * sum(sqrt(SS)); 
+    for (k in 1:K)
+      target += - (1-p) * lambda * N * fabs(beta[k]); 
+    target += sum(log(sigma));
     }
 

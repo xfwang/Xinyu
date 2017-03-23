@@ -70,4 +70,5 @@ res <- list()
 res$fit.sparse1 <- stan(file = "test3_LASSO/sparseGrpLasso3.stan", data = list(N,K,G, y,x), pars=c("beta","lambda"), chains = 1)
 res$fit.sparse2 <- stan(file = "test3_LASSO/sparseGrpLasso4.stan", data = list(N,K,G, y,x), pars=c("beta","lambda"), chains = 1)
 res$fit.sparse3 <- stan(file = "test3_LASSO/sparseGrpLasso4_normal.stan", data = list(N,K,G, y,x), pars=c("beta","lambda"), chains = 1)
-res$fit.sparse4 <- 
+res$fit.sparse4 <- stan(file = "test3_LASSO/sparseGrpLasso4_normal_gamma.stan", data = list(N,K,G, y,x), pars=c("beta","lambda"), chains = 1)
+

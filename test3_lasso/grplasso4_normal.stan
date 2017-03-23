@@ -11,7 +11,6 @@ data {
 parameters {
     real<lower=0> lambda;
     vector[K*G] beta;
-    // vector[K*G] mu;
     real mu;
     real<lower=0> sigma;
     }
