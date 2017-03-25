@@ -9,7 +9,7 @@ N = 100 # number of samples
 K = 100 # number of covariates
 K1= 10
 
-beta = c(rep(1,K1), rep(0,(K-K1)))
+beta = c(rep(0.5,K1), rep(0,(K-K1)))
 x = cov_groupLasso(N, K)
 y = as.vector(x %*% beta + rnorm(N, sd = 1))
 
