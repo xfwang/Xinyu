@@ -1,4 +1,4 @@
-## Student-t prior
+## Student-t prior plus
 
 /* lg_t.stan */
 
@@ -33,6 +33,8 @@ parameters {
 	real<lower=0> r2_global;
 	vector<lower=0>[K] r1_local;
 	vector<lower=0>[K] r2_local;
+	vector<lower=0>[K] r1_localplus;
+	vector<lower=0>[K] r2_localplus;
 }
 
 transformed parameters {
@@ -40,11 +42,13 @@ transformed parameters {
 	// global and local variance parameters, and the input weights
 	real<lower=0> tau;
 	vector<lower=0>[K] lambda;
+	vector<lower=0>[K] lambdaplus;
 	vector[K] beta;
 	
 	tau = r1_global * sqrt(r2_global);
 	lambda = r1_local .* sqrt(r2_local);
-	beta = z .* lambda*tau;
+	lambdaplus = r1_localplus .* sqrt_vec(r2_localplus);
+	beta = z .* lambda .*lambdaplus*tau;
 }
 
 model {
@@ -56,6 +60,8 @@ model {
 	z ~ normal(0, 1);
 	r1_local ~ normal(0.0, 1.0);
 	r2_local ~ inv_gamma(0.5*nu, 0.5*nu);
+	r1_localplus ~ normal(0.0, 1.0);
+	r2_localplus ~ inv_gamma(0.5*nu, 0.5*nu);
 	
 	// half cauchy for tau
 	r1_global ~ normal(0.0, 1.0);
