@@ -10,7 +10,7 @@ K = 100 # number of covariates
 K1= 10
 
 beta = c(rep(0.5,K1), rep(0,(K-K1)))
-x = cov_groupLasso(N, K)
+x = X_groupLasso(N, K)
 y = as.vector(x %*% beta + rnorm(N, sd = 1))
 
 res <- list()
@@ -22,6 +22,9 @@ res$fit4 <- stan(file = "test3_LASSO/lasso3_normal_gamma2.stan", data = list(N,K
                  pars=c("beta","mu", "sigma","lambda","tau"), chains = 1)
 res$fit5 <- stan(file = "test3_LASSO/lasso3_normal_gamma3.stan", data = list(N,K, y,x), 
                  pars=c("beta","mu", "sigma","lambda","tau"), chains = 1)
+res$fit6 <- stan(file = "test3_LASSO/lasso3_t.stan", data=list(N,K, y,x,nu=3.0), iter=1000, chains=1)
+res$fit7 <- stan(file = "test3_LASSO/lasso3_t2.stan", data=list(N,K, y,x,nu=3.0), iter=1000, chains=1)
+res$fit8 <- stan(file = "test3_LASSO/lasso3_t.stan", data=list(N,K, y,x,nu=1), iter=1000, chains=1) # horseshoe
 
 lapply(res, function(fit) crossprod(param.stan(fit, confidence.level = 0.99)-beta))
 lapply(res, function(fit) which(param.stan(fit, confidence.level = 0.99) != 0))
