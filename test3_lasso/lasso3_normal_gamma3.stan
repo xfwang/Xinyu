@@ -1,4 +1,4 @@
-## Gasussian_Gamma prior, lambda as a parameter
+## Gasussian_Gamma prior, lambda as a parameter, hyperprior of lambda^2
 
 data {
   int<lower=0> N;
