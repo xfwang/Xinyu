@@ -2,7 +2,19 @@
 # functions for performing the projection predictive variable subset selection
 # for linear Gaussian model.
 #
-
+#####---------------------------------------------------------------------------------------------------------#####
+##### R script to calculate KL for a submodel                                                                 #####
+#####                                                                                                         #####
+##### Input:                                                                                                  #####
+#####       w                 :=  coefficient matrix: (P+1) * niter(posterior draws)                          #####
+#####       sigma2            :=  sigma square vector: length = niter                                         #####
+#####       x                 :=  predictor matrix containing all predictors: N * (P+1)                       #####
+#####       indproj           :=  indicators of the predictors selected in the model, a subset of 1:(P+1)     #####
+##### Output:                                                                                                 #####
+#####       w                 :=  LSE of coefficients in the submodel                                         #####
+#####       sigma2            :=  mse of submodel                                                             #####
+#####       kl                :=  a vector of KL (Kullback-Leibler divergence) of all submodels of length P+1 #####
+#####---------------------------------------------------------------------------------------------------------#####
 lm_proj <- function(w,sigma2,x,indproj) {
   
   # assume the intercept term is stacked into w, and x contains 
@@ -33,6 +45,18 @@ lm_proj <- function(w,sigma2,x,indproj) {
 }
 
 
+#####---------------------------------------------------------------------------------------------------------#####
+##### R script to generate all models selected from a stan object                                             #####
+#####                                                                                                         #####
+##### Input:                                                                                                  #####
+#####       w                 :=  coefficient matrix: (P+1) * niter(posterior draws)                          #####
+#####       sigma2            :=  sigma square vector: length = niter                                         #####
+#####       x                 :=  predictor matrix containing all predictors: N * (P+1)                       #####
+##### Output:                                                                                                 #####
+#####       chosen            :=  a vector of indices of predictors ordered by the priority of entering models#####
+#####                             of length P+1                                                               #####
+#####       kl                :=  a vector of KL (Kullback-Leibler divergence) of all submodels of length P+1 #####
+#####---------------------------------------------------------------------------------------------------------#####
 lm_fprojsel <- function(w, sigma2, x) {
   
   # forward variable selection using the projection
@@ -66,3 +90,56 @@ lm_fprojsel <- function(w, sigma2, x) {
   }
   return(list(chosen=chosen, kl=kl))
 }
+
+
+#####---------------------------------------------------------------------------------------------------------#####
+##### R script to generate all models selected at group level from a stan object                              #####
+#####                                                                                                         #####
+##### Input:                                                                                                  #####
+#####       w                 :=  coefficient matrix: (P+1) * niter(posterior draws)                          #####
+#####       sigma2            :=  sigma square vector: length = niter                                         #####
+#####       x                 :=  predictor matrix containing all predictors: N * (P+1)                       #####
+#####       group_index       :=  a vector of length P indicating the group each predictor belongs to         #####
+##### Output:                                                                                                 #####
+#####       chosen            :=  a vector of indices of groups ordered by the priority of entering models    #####
+#####                             of length G (the number of groups)                                          #####
+#####       kl                :=  a vector of KL (Kullback-Leibler divergence) of all submodels of length G   #####
+#####---------------------------------------------------------------------------------------------------------#####
+
+
+lm_fprojsel_grp <- function(w, sigma2, x, group_index) {
+  
+  group_names <- unique(group_index)
+  G = length(group_names)
+  
+  # forward group selection using the projection
+  d = dim(x)[2]
+  chosen <- c() # chosen groups, start from the model with the intercept only
+  notchosen <- setdiff(1:G, chosen)
+  
+  # start from the model having only the intercept term
+  kl <- rep(0,G+1)
+  kl[1] <- lm_proj(w,sigma2,x,1)$kl
+  
+  # start adding variables one at a time
+  for (g in 1:G) {
+    
+    nleft <- length(notchosen)
+    val <- rep(0, nleft)
+    
+    for (i in 1:nleft) {
+      ind <- sort( c(1, which(group_index %in% c(chosen, notchosen[i]))+1) )
+      proj <- lm_proj(w,sigma2,x,ind)
+      val[i] <- proj$kl
+    }
+    
+    # find the variable that minimizes the kl
+    imin <- which.min(val)
+    chosen <- c(chosen, notchosen[imin])
+    notchosen <- setdiff(1:d, chosen)
+    
+    kl[g+1] <- val[imin]
+  }
+  return(list(chosen=chosen, kl=kl))
+}
+
