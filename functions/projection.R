@@ -27,7 +27,7 @@ lm_proj <- function(w,sigma2,x,indproj) {
   
   # solve the projection equations
   fit <- x %*% w # fit of the full model
-  wp <- solve(t(xp) %*% xp, t(xp) %*% fit)
+  wp <- solve(t(xp) %*% xp, t(xp) %*% fit,tol=1e-20)
   sigma2p <- sigma2 + colMeans((fit - xp %*% wp)^2)
   
   # this is the estimated kl-divergence between the full and projected model
@@ -62,15 +62,15 @@ lm_fprojsel <- function(w, sigma2, x) {
   # forward variable selection using the projection
   
   d = dim(x)[2]
-  chosen <- 1 # chosen variables, start from the model with the intercept only
+  chosen <- c() # chosen variables, start from the model with the intercept only
   notchosen <- setdiff(1:d, chosen)
   
   # start from the model having only the intercept term
   kl <- rep(0,d)
-  kl[1] <- lm_proj(w,sigma2,x,1)$kl
+  # kl[1] <- lm_proj(w,sigma2,x,1)$kl
   
   # start adding variables one at a time
-  for (k in 2:d) {
+  for (k in 1:d) {
     
     nleft <- length(notchosen)
     val <- rep(0, nleft)
@@ -118,8 +118,8 @@ lm_fprojsel_grp <- function(w, sigma2, x, group_index) {
   notchosen <- setdiff(1:G, chosen)
   
   # start from the model having only the intercept term
-  kl <- rep(0,G+1)
-  kl[1] <- lm_proj(w,sigma2,x,1)$kl
+  kl <- rep(0,G)
+  # kl[1] <- lm_proj(w,sigma2,x,1)$kl
   
   # start adding variables one at a time
   for (g in 1:G) {
@@ -128,7 +128,7 @@ lm_fprojsel_grp <- function(w, sigma2, x, group_index) {
     val <- rep(0, nleft)
     
     for (i in 1:nleft) {
-      ind <- sort( c(1, which(group_index %in% c(chosen, notchosen[i]))+1) )
+      ind <- sort(which(group_index %in% c(chosen, notchosen[i])))
       proj <- lm_proj(w,sigma2,x,ind)
       val[i] <- proj$kl
     }
@@ -138,7 +138,7 @@ lm_fprojsel_grp <- function(w, sigma2, x, group_index) {
     chosen <- c(chosen, notchosen[imin])
     notchosen <- setdiff(1:d, chosen)
     
-    kl[g+1] <- val[imin]
+    kl[g] <- val[imin]
   }
   return(list(chosen=chosen, kl=kl))
 }
