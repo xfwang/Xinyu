@@ -11,17 +11,13 @@ parameters {
   vector[K] beta;
   real mu;
   real<lower=0> sigma;
+  real<lower=0> gamma;
   real<lower=0> lambda;
 }
 
-transformed parameters {
-  real<lower=0> squared_error;
-  squared_error = dot_self(y - x * beta);
-}
-
 model {
-  beta ~ normal(mu, sigma);
-  target += -squared_error;
+  y ~ normal(x *beta, sigma);
+  beta ~ normal(mu, gamma);
   for (k in 1:K)
     target += - lambda * N * fabs(beta[k]); 
 }

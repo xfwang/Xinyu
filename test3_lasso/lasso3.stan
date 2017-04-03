@@ -12,16 +12,12 @@ parameters {
   real mu;
   real<lower=0> sigma;
   real<lower=0> lambda;
-}
-
-transformed parameters {
-  real<lower=0> squared_error;
-  squared_error = dot_self(y - x * beta);
+  real<lower=0> gamma;
 }
 
 model {
-  beta ~ double_exponential(mu, sigma);
-  target += -squared_error;
+  y ~ normal(x * beta, sigma);
+  beta ~ double_exponential(mu, gamma);
   for (k in 1:K)
     target += - lambda * N * fabs(beta[k]); 
 }
