@@ -15,9 +15,8 @@ shrink.stan <- function(stan.ext, confidence.level = 0.95) {
 }
 
 param.stan <- function(stan.obj, param = "beta", confidence.level = 0.95) {
-  fit.beta <- summary(stan.obj)$summary[grep(param, rownames(summary(stan.obj)$summary)), "mean"]
   la <- rstan::extract(stan.obj, permuted = T)
-  beta <- fit.beta * as.numeric(!shrink.stan(la[[param]], confidence.level = confidence.level))
+  beta <- colMeans(la[[param]]) * as.numeric(!shrink.stan(la[[param]], confidence.level = confidence.level))
   return(beta)
 }
 
