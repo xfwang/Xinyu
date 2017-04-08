@@ -9,7 +9,7 @@ library(dplyr);library(rstan)
 ##### Output:                                                                                                 #####
 #####       idx <= 0          :=  a vector of indicators on if a parameter is 0 or not                        #####
 #####---------------------------------------------------------------------------------------------------------#####
-shrink_ind.stan <- function(stan.ext, confidence.level = 0.95) {
+shrink_index.stan <- function(stan.ext, confidence.level = 0.95) {
   idx <- stan.ext %>% 
     apply(2, quantile, c((1 - confidence.level) / 2, (1 + confidence.level) / 2)) %>%
     apply(2, prod)
@@ -18,7 +18,7 @@ shrink_ind.stan <- function(stan.ext, confidence.level = 0.95) {
 
 shrink.stan <- function(stan.obj, param = "beta", confidence.level = 0.95) {
   beta_all <- param.stan(stan.obj, param = param)
-  beta <- colMeans(beta_all) * as.numeric(!shrink_ind.stan(beta_all, confidence.level = confidence.level))
+  beta <- colMeans(beta_all) * as.numeric(!shrink_index.stan(beta_all, confidence.level = confidence.level))
   return(beta)
 }
 
@@ -52,7 +52,7 @@ stan_plot <- function(stan.list, type = c("Rhat")) {
 ##### Output:                                                                                                 #####
 #####       credible_level    :=  how likely the true parameter is 0, which is the cumulative probability of 0#####
 #####---------------------------------------------------------------------------------------------------------#####
-cred_prob <- function(beta.list) {
+cred_probability <- function(beta.list) {
   cum_prob <- pnorm(0, mean = mean(beta.list), sd = sd(beta.list))
   return(min(cum_prob, 1-cum_prob)*2)
 }
@@ -66,3 +66,5 @@ rank_select <- function(stan.obj, param = "beta") {
   beta.array <- param.stan(stan.obj, param = param)
   return(apply(beta.array, 2, cred_quantile))
 }
+
+
