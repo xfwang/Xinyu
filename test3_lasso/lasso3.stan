@@ -17,6 +17,7 @@ parameters {
 
 model {
   y ~ normal(x * beta, sigma);
+  sigma ~ normal(0,1);
   beta ~ double_exponential(mu, gamma);
   for (k in 1:K)
     target += - lambda * N * fabs(beta[k]); 

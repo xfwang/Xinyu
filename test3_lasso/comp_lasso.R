@@ -26,8 +26,8 @@ res$fit6 <- stan(file = "test3_LASSO/lasso3_t.stan", data=list(N,K, y,x,nu=3.0),
 res$fit7 <- stan(file = "test3_LASSO/lasso3_t2.stan", data=list(N,K, y,x,nu=3.0), iter=1000, chains=1)
 res$fit8 <- stan(file = "test3_LASSO/lasso3_t.stan", data=list(N,K, y,x,nu=1), iter=1000, chains=1) # horseshoe
 
-lapply(res, function(fit) crossprod(param.stan(fit, confidence.level = 0.99)-beta))
-lapply(res, function(fit) which(param.stan(fit, confidence.level = 0.99) != 0))
+lapply(res, function(fit) crossprod(shrink.stan(fit, confidence.level = 0.99)-beta))
+lapply(res, function(fit) which(shrink.stan(fit, confidence.level = 0.99) != 0))
 
 
 ##lambda

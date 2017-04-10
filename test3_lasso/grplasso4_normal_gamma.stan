@@ -11,23 +11,27 @@ data {
 parameters {
     real<lower=0> lambda;
     vector[K*G] beta;
-    vector[G] mu;
-    real<lower=0> sigma[G];
+    real<lower=0> tau_sq[G];
+    real mu;
+    real<lower=0> sigma;
     }
     
 transformed parameters {
-    real<lower=0> squared_error;
     vector[G] SS;
-
-    squared_error = dot_self(y - x * beta);
+    real<lower=0> lambda_sq;
+    lambda_sq = lambda ^2;
     for(i in 1:G) 
-      SS[i] = dot_self(beta[((i-1)*K+1) : (i*K)]);
+      SS[i] = sqrt(dot_self(beta[((i-1)*K+1) : (i*K)]));
     }
 
 model {
+    y ~ normal(x * beta, sigma);
+    sigma ~ normal(0,1);
     for(i in 1:G) 
-      beta[((i-1)*K+1) : (i*K)] ~ normal(mu[i], sigma[i]);
-    target += -squared_error;
-    target += - lambda * N * sum(sqrt(SS)); 
+      beta[((i-1)*K+1) : (i*K)] ~ normal(mu, sigma*sqrt(tau_sq[i]));
+    tau_sq ~ exponential(lambda_sq * N^2 / 8);
+    target += - lambda * N * sum(SS); 
 }
 
+
+    

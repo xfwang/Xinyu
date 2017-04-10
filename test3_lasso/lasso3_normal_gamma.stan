@@ -31,7 +31,6 @@ model {
     beta[j] ~ normal(mu, sigma*sqrt(tau_sq[j]));
   tau_sq ~ exponential(lambda_sq * N^2 / 8);
   // lambda_sq ~ gamma(a,b);
-  // a ~ gamma(1,1);
   for (k in 1:K)
     target += - lambda * N * fabs(beta[k]); 
 }

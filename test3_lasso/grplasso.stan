@@ -11,24 +11,19 @@ data {
     
 parameters {
     vector[K*G] beta;
+  real<lower=0> sigma;
     }
     
 transformed parameters {
-    real<lower=0> squared_error;
     vector[G] SS;
 
-    squared_error = dot_self(y - x * beta);
     for(i in 1:G) 
-      SS[i] = dot_self(beta[((i-1)*K+1) : (i*K)]);
+      SS[i] = sqrt(dot_self(beta[((i-1)*K+1) : (i*K)]));
     }
 
 model {
   // beta ~ double_exponential(0,1);
-  target += -squared_error;
-  target += - lambda * sum(sqrt(SS)); 
-}
-
-generated quantities {
-  real<lower=0> sigma_squared;
-  sigma_squared = squared_error / N;
+  y ~ normal(x * beta, sigma);
+  sigma ~ normal(0,1);
+  target += - lambda * sum(SS); 
 }
